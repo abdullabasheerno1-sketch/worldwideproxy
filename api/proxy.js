@@ -1,9 +1,21 @@
 const axios = require('axios');
 
 module.exports = async (req, res) => {
-  // Ningalude original IPTV link ivide hardcode cheythirikkunnu, 
-  // allenkil ?url= vazhi pass cheyyam.
-  const targetUrl = req.query.url || 'http://raztv.online/live/MAGNL39E26/hvhS6xsuZP/1339214.m3u8';
+  const vercelHost = req.headers.host;
+  const protocol = 'https';
+  const vercelBase = `${protocol}://${vercelHost}`;
+
+  let targetUrl = 'http://raztv.online/live/MAGNL39E26/hvhS6xsuZP/1339214.m3u8';
+  
+  const cleanPath = req.url.replace(/^\/+/, '');
+  if (cleanPath && cleanPath !== '' && cleanPath !== 'stream.m3u8') {
+    try {
+      const decodedUrl = decodeURIComponent(cleanPath);
+      if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
+        targetUrl = decodedUrl;
+      }
+    } catch (e) {}
+  }
 
   try {
     const response = await axios({
@@ -14,26 +26,20 @@ module.exports = async (req, res) => {
         'Referer': targetUrl,
         'Accept': '*/*'
       },
-      responseType: 'text'
+      responseType: targetUrl.includes('.m3u8') ? 'text' : 'arraybuffer'
     });
 
     let body = response.data;
     
-    // M3U8 playlist anenkil linkukal purnaamayum Vercel HTTPS link-ilekku mattunnu
     if (targetUrl.includes('.m3u8')) {
-      const vercelHost = req.headers.host;
-      const protocol = 'https'; // Full HTTPS akan
-      const vercelBase = `${protocol}://${vercelHost}`;
-
       const lines = body.split('\n');
       const modifiedLines = lines.map(line => {
         if (line && !line.startsWith('#')) {
+          let absoluteSegmentUrl = line;
           if (!line.startsWith('http')) {
-            const absoluteSegmentUrl = new URL(line, targetUrl).toString();
-            return `${vercelBase}/?url=${encodeURIComponent(absoluteSegmentUrl)}`;
-          } else {
-            return `${vercelBase}/?url=${encodeURIComponent(line)}`;
+            absoluteSegmentUrl = new URL(line, targetUrl).toString();
           }
+          return `${vercelBase}/${encodeURIComponent(absoluteSegmentUrl)}`;
         }
         return line;
       });
