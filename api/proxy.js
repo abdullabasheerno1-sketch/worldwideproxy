@@ -24,9 +24,9 @@ module.exports = async (req, res) => {
       method: 'get',
       url: targetUrl,
       headers: {
-        'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
-        'Referer': 'http://raztv.online/',
-        'Accept': '*/*'
+        'User-Agent': 'Lavf/58.12.100', // സ്റ്റാൻഡേർഡ് IPTV പ്ലെയർ യൂസർ ഏജന്റ്
+        'Accept': '*/*',
+        'Connection': 'keep-alive'
       },
       responseType: isM3U8 ? 'text' : 'arraybuffer',
       timeout: 15000
@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
       return res.status(200).send(Buffer.from(body));
     }
 
-  } catch (error) {
+  } `catch` (error) {
     return res.status(500).send('Proxy Error: ' + error.message);
   }
 };
