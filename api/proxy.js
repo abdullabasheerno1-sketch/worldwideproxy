@@ -5,11 +5,12 @@ module.exports = async (req, res) => {
   const protocol = 'https';
   const vercelBase = `${protocol}://${vercelHost}`;
 
-  // നിന്റെ ഒറിജിനൽ IPTV ലിങ്ക് ഇവിടെ ഹാർഡ്കോഡ് ചെയ്തിരിക്കുന്നു
+  // ഡിഫോൾട്ട് ഒറിജിനൽ IPTV ലിങ്ക്
   let targetUrl = 'http://raztv.online/live/MAGNL39E26/hvhS6xsuZP/1339214.m3u8';
   
+  // പാത്ത് വഴി വരുന്ന സെഗ്മെന്റുകൾ കൃത്യമായി പരിശോധിക്കുന്നു
   const cleanPath = req.url.replace(/^\/+/, '');
-  if (cleanPath && cleanPath !== '' && cleanPath !== 'proxy.m3u8') {
+  if (cleanPath && cleanPath !== '' && cleanPath !== 'proxy.m3u8' && cleanPath !== 'api/proxy') {
     try {
       const decodedUrl = decodeURIComponent(cleanPath);
       if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
@@ -24,10 +25,11 @@ module.exports = async (req, res) => {
       url: targetUrl,
       headers: {
         'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
-        'Referer': targetUrl,
+        'Referer': 'http://raztv.online/',
         'Accept': '*/*'
       },
-      responseType: targetUrl.includes('.m3u8') ? 'text' : 'arraybuffer'
+      responseType: targetUrl.includes('.m3u8') ? 'text' : 'arraybuffer',
+      timeout: 10000
     });
 
     let body = response.data;
