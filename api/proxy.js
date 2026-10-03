@@ -24,9 +24,10 @@ module.exports = async (req, res) => {
       method: 'get',
       url: targetUrl,
       headers: {
-        'User-Agent': 'Lavf/58.12.100', // സ്റ്റാൻഡേർഡ് IPTV പ്ലെയർ യൂസർ ഏജന്റ്
-        'Accept': '*/*',
-        'Connection': 'keep-alive'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Referer': 'http://raztv.online/',
+        'Origin': 'http://raztv.online',
+        'Accept': '*/*'
       },
       responseType: isM3U8 ? 'text' : 'arraybuffer',
       timeout: 15000
@@ -51,11 +52,19 @@ module.exports = async (req, res) => {
       res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
       return res.status(200).send(body);
     } else {
-      res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp2t');
+      // സെഗ്മെന്റ് ഫയലുകൾക്ക് ഒറിജിനൽ ഹെഡേഴ്സ് കൂടെ നൽകുന്നു
+      if (response.headers['content-type']) {
+        res.setHeader('Content-Type', response.headers['content-type']);
+      } else {
+        res.setHeader('Content-Type', 'video/mp2t');
+      }
+      if (response.headers['content-length']) {
+        res.setHeader('Content-Length', response.headers['content-length']);
+      }
       return res.status(200).send(Buffer.from(body));
     }
 
-  } `catch` (error) {
+  } catch (error) {
     return res.status(500).send('Proxy Error: ' + error.message);
   }
 };
