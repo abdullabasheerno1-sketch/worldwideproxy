@@ -1,55 +1,28 @@
 const axios = require('axios');
-const tunnel = require('tunnel');
 
 module.exports = async (req, res) => {
-  const targetUrl = req.query.url;
-  
-  if (!targetUrl) {
-    return res.status(400).send('Please provide a target url using ?url=YOUR_LINK');
-  }
+  // Ningalude original IPTV link ivide hardcode cheythirikkunnu, 
+  // allenkil ?url= vazhi pass cheyyam.
+  const targetUrl = req.query.url || 'http://raztv.online/live/MAGNL39E26/hvhS6xsuZP/1339214.m3u8';
 
   try {
-    // Proxy configuration with timeout
-    const proxyConfig = tunnel.httpOverHttp({
-      proxy: {
-        host: '103.87.26.161',
-        port: 8080
-      }
+    const response = await axios({
+      method: 'get',
+      url: targetUrl,
+      headers: {
+        'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
+        'Referer': targetUrl,
+        'Accept': '*/*'
+      },
+      responseType: 'text'
     });
-
-    let response;
-    try {
-      // First try with the proxy
-      response = await axios({
-        method: 'get',
-        url: targetUrl,
-        headers: {
-          'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
-          'Referer': targetUrl
-        },
-        responseType: 'text',
-        httpsAgent: proxyConfig,
-        proxy: false,
-        timeout: 5000 // 5 seconds timeout
-      });
-    } catch (proxyError) {
-      // If proxy fails, fallback to direct fetch
-      response = await axios({
-        method: 'get',
-        url: targetUrl,
-        headers: {
-          'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
-          'Referer': targetUrl
-        },
-        responseType: 'text'
-      });
-    }
 
     let body = response.data;
     
+    // M3U8 playlist anenkil linkukal purnaamayum Vercel HTTPS link-ilekku mattunnu
     if (targetUrl.includes('.m3u8')) {
       const vercelHost = req.headers.host;
-      const protocol = req.headers['x-forwarded-proto'] || 'https';
+      const protocol = 'https'; // Full HTTPS akan
       const vercelBase = `${protocol}://${vercelHost}`;
 
       const lines = body.split('\n');
