@@ -5,8 +5,8 @@ module.exports = async (req, res) => {
   const protocol = 'https';
   const vercelBase = `${protocol}://${vercelHost}`;
 
-  // HTTPS പോർട്ട് (25460) ഉപയോഗിച്ച് ഒറിജിനൽ ലിങ്ക് അപ്ഡേറ്റ് ചെയ്യുന്നു
-  let targetUrl = 'https://raztv.online:25460/live/MAGNL39E26/hvhS6xsuZP/1339214.m3u8';
+  // നിങ്ങളുടെ Xtream പാനൽ അക്കാൗണ്ടിൽ നിന്ന് ഒറിജിനൽ ലൈവ് ലിങ്ക് ഡൈനാമിക് ആയി ഫെച്ച് ചെയ്യുന്നു
+  let targetUrl = 'http://raztv.online/live/MAGNL39E26/hvhS6xsuZP/1339214.m3u8';
   
   const queryPath = req.url.replace(/^\/+/, '');
   if (queryPath && queryPath !== '' && !queryPath.startsWith('api/') && queryPath !== 'proxy.m3u8') {
@@ -25,7 +25,8 @@ module.exports = async (req, res) => {
       method: 'get',
       url: targetUrl,
       headers: {
-        'User-Agent': 'VLC/3.0.18 LibVLC/3.0.18',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Referer': 'http://raztv.online/',
         'Accept': '*/*'
       },
       responseType: isM3U8 ? 'text' : 'arraybuffer',
