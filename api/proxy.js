@@ -5,19 +5,19 @@ module.exports = async (req, res) => {
   const protocol = 'https';
   const vercelBase = `${protocol}://${vercelHost}`;
 
-  // ഡിഫോൾട്ട് ഒറിജിനൽ IPTV ലിങ്ക്
   let targetUrl = 'http://raztv.online/live/MAGNL39E26/hvhS6xsuZP/1339214.m3u8';
   
-  // പാത്ത് വഴി വരുന്ന സെഗ്മെന്റുകൾ കൃത്യമായി പരിശോധിക്കുന്നു
-  const cleanPath = req.url.replace(/^\/+/, '');
-  if (cleanPath && cleanPath !== '' && cleanPath !== 'proxy.m3u8' && cleanPath !== 'api/proxy') {
+  const queryPath = req.url.replace(/^\/+/, '');
+  if (queryPath && queryPath !== '' && !queryPath.startsWith('api/') && queryPath !== 'proxy.m3u8') {
     try {
-      const decodedUrl = decodeURIComponent(cleanPath);
-      if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
-        targetUrl = decodedUrl;
+      const decoded = decodeURIComponent(queryPath);
+      if (decoded.startsWith('http://') || decoded.startsWith('https://')) {
+        targetUrl = decoded;
       }
     } catch (e) {}
   }
+
+  const isM3U8 = targetUrl.includes('.m3u8');
 
   try {
     const response = await axios({
@@ -28,34 +28,34 @@ module.exports = async (req, res) => {
         'Referer': 'http://raztv.online/',
         'Accept': '*/*'
       },
-      responseType: targetUrl.includes('.m3u8') ? 'text' : 'arraybuffer',
-      timeout: 10000
+      responseType: isM3U8 ? 'text' : 'arraybuffer',
+      timeout: 15000
     });
 
     let body = response.data;
-    
-    if (targetUrl.includes('.m3u8')) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    if (isM3U8) {
       const lines = body.split('\n');
       const modifiedLines = lines.map(line => {
         if (line && !line.startsWith('#')) {
-          let absoluteSegmentUrl = line;
+          let segmentUrl = line;
           if (!line.startsWith('http')) {
-            absoluteSegmentUrl = new URL(line, targetUrl).toString();
+            segmentUrl = new URL(line, targetUrl).toString();
           }
-          return `${vercelBase}/${encodeURIComponent(absoluteSegmentUrl)}`;
+          return `${vercelBase}/${encodeURIComponent(segmentUrl)}`;
         }
         return line;
       });
       body = modifiedLines.join('\n');
       res.setHeader('Content-Type', 'application/vnd.apple.mpegurl');
+      return res.status(200).send(body);
     } else {
       res.setHeader('Content-Type', response.headers['content-type'] || 'video/mp2t');
+      return res.status(200).send(Buffer.from(body));
     }
 
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.status(response.status).send(body);
-
   } catch (error) {
-    res.status(500).send('Proxy Error: ' + error.message);
+    return res.status(500).send('Proxy Error: ' + error.message);
   }
 };
